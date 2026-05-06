@@ -47,7 +47,7 @@ class TextPreprocessor:
         if len(set(text.replace(" ", ""))) < 3 and len(text) > 10:
             return True # 10자가 넘는데 사용된 글자가 2종류 이하인 경우
     
-    def is_valid(self, text: str) -> tuple[bool, str]:
+    def _is_valid(self, text: str) -> tuple[bool, str]:
         """유효성 검사 및 사유 반환"""
         if not text:
             return False, "Empty Text"
@@ -72,7 +72,7 @@ class TextPreprocessor:
         # 반복 축약
         text = self._shrink_repeats(text)
         # 최종 유효성 검사
-        is_ok, message = self.is_valid(text)
+        is_ok, message = self._is_valid(text)
         
         if not is_ok:
             return None, message
