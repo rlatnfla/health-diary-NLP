@@ -11,14 +11,14 @@
 
 **Windows:**
 
-````bash
+```bash
 # 가상환경 생성
 python -m venv venv
 
 # 가상환경 활성화
 .\venv\Scripts\activate
 
-
+```
 
 **macOS/Linux:**
 
@@ -28,7 +28,7 @@ python3 -m venv venv
 
 # 가상환경 활성화
 source venv/bin/activate
-````
+```
 
 ### 2. 의존성 설치
 
