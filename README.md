@@ -1,4 +1,3 @@
-````markdown
 # Health Diary NLP Module
 
 사용자의 건강 일기를 분석하여 수치화된 데이터를 추출하는 NLP 모듈입니다.
@@ -12,14 +11,14 @@
 
 **Windows:**
 
-```bash
+````bash
 # 가상환경 생성
 python -m venv venv
 
 # 가상환경 활성화
 .\venv\Scripts\activate
-```
-````
+
+
 
 **macOS/Linux:**
 
@@ -29,7 +28,7 @@ python3 -m venv venv
 
 # 가상환경 활성화
 source venv/bin/activate
-```
+````
 
 ### 2. 의존성 설치
 
@@ -67,4 +66,5 @@ GOOGLE_API_KEY=your_google_api_key_here
 
 # OpenAI API Key (OpenAI 사용 시 필요)
 OPENAI_API_KEY=your_openai_api_key_here
+```
 ````
