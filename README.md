@@ -51,8 +51,6 @@ pip install -r requirements.txt
 - `GOOGLE_API_KEY`: Google AI Studio에서 발급받은 API 키
 - `OPENAI_API_KEY`: OpenAI에서 발급받은 API 키
 
-````
-
 ---
 
 ### 📄 .env.template
@@ -67,4 +65,3 @@ GOOGLE_API_KEY=your_google_api_key_here
 # OpenAI API Key (OpenAI 사용 시 필요)
 OPENAI_API_KEY=your_openai_api_key_here
 ```
-````
