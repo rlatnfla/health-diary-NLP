@@ -1,0 +1,32 @@
+# 1. 파이썬 가상환경 및 캐시
+
+venv/
+.venv/
+**pycache**/
+_.py[cod]
+_$py.class
+
+# 2. 로컬 로그 및 데이터
+
+\*.log
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 3. 환경 변수 및 설정
+
+.env
+.vscode/
+.idea/
+
+# 4. 버전 관리 시스템
+
+.git
+.gitignore
+.github/
+
+# 5. 도커 관련 파일
+
+Dockerfile
+docker-compose.yml
+.dockerignore

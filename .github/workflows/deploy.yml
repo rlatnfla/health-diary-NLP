@@ -1,0 +1,73 @@
+name: Deploy to Amazon EC2
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: health-diary-nlp-api
+  CONTAINER_NAME: nlp-api-server
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 1. AWS 인증
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 2. ECR 로그인
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 3. Docker 이미지 빌드 및 ECR 푸시
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # 4. EC2에 접속해서 Docker Compose로 배포 실행
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # 1. 프로젝트 폴더로 이동 (폴더가 없으면 생성)
+            mkdir -p ~/app
+            cd ~/app
+
+            # 2. ECR 로그인
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+
+            # 3. 환경 변수 파일(.env) 생성 (Docker Compose가 읽을 수 있도록)
+            echo "IMAGE_URL=${{ steps.build-image.outputs.image }}" > .env
+            echo "LLM_PROVIDER=${{ secrets.LLM_PROVIDER }}" >> .env
+            echo "GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}" >> .env
+
+            # 4. docker-compose.yml 파일 존재 확인 (없으면 레포지토리에서 가져오는 로직 필요, 여기서는 pull 가정)
+            # 실제로는 배포 시점에 docker-compose.yml만 따로 SCP로 보내거나 서버에 고정해둡니다.
+
+            # 5. 컨테이너 교체
+            docker-compose pull
+            docker-compose up -d
+
+            # 6. 정리
+            docker image prune -f
