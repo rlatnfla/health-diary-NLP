@@ -1,12 +1,18 @@
 import os
+import asyncio
+import time
 from typing import List, Optional, Type, Any
 from dotenv import load_dotenv
 from pydantic import create_model, Field, BaseModel 
-from llm_strategy import LLMProviderStrategy
+from nlp.llm_strategy import LLMProviderStrategy
 from langchain_core.prompts import ChatPromptTemplate
-from preprocessor import TextPreprocessor
+from nlp.preprocessor import TextPreprocessor
+from app.core.exceptions import LLMTimeoutException
+from app.core.logger import get_logger
 
 load_dotenv()
+
+logger = get_logger(__name__)
 
 class HealthDataExtractor:
     def __init__(self, strategy: LLMProviderStrategy, metadata: dict):
@@ -50,10 +56,12 @@ class HealthDataExtractor:
         fields_str = ", ".join(target_fields)
         return prompt_template.format_messages(fields=fields_str, input_text=diary_text)
 
-    def extract(self, diary_text: str) -> Any:
+    async def extract(self, diary_text: str) -> Any:
         """
         실제로 LLM에 요청을 보내고 구조화된 객체를 반환 (Public)
         """
+        start_time = time.perf_counter()
+
         # 1. 동적으로 응답 형식을 정의
         dynamic_model = self._create_dynamic_pydantic_model()
         
@@ -63,17 +71,30 @@ class HealthDataExtractor:
         # 3. 프롬프트 생성
         processed_diary, status = self.preprocessor.run(diary_text)
         if processed_diary is None:
-            print(f"로그: 전처리 실패 - {status}")
+            logger.error(f"로그: 전처리 실패 - {status}")
             return None
         
         messages = self._generate_prompt(processed_diary, self.target_fields)
         
         # 4. 실제 호출 및 결과 반환
-        return structured_llm.invoke(messages)
+        try:
+            logger.info(f"LLM 요청 시작 (입력 길이: {len(diary_text)})")
+            
+            result = await structured_llm.ainvoke(messages)
+            
+            end_time = time.perf_counter()
+            duration = end_time - start_time
+            
+            logger.info(f"LLM 분석 완료 - 소요 시간: {duration:.2f}s")
+            return result
+            
+        except asyncio.TimeoutError as e:
+            logger.error(f"LLM 분석 중 에러 발생: {str(e)}")
+            raise LLMTimeoutException()
 
 def get_extractor() -> HealthDataExtractor:
-        from llm_providers import GeminiProvider, OpenAIProvider
-        from schema_config import HEALTH_METADATA
+        from nlp.llm_providers import GeminiProvider, OpenAIProvider
+        from nlp.schema_config import HEALTH_METADATA
 
         provider_type = os.getenv("LLM_PROVIDER", "GEMINI").upper()
     

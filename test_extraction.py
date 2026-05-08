@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from extractor import get_extractor
+from nlp.extractor import get_extractor
 
 load_dotenv()
 
